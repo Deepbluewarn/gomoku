@@ -5,15 +5,25 @@ import styles from './page.module.css';
 import { useSocket } from "@/components/socket-provider";
 import { useEffect, useState } from "react";
 import { IUserVerificationStatus } from "@/interfaces/register";
+import { REQUEST_USER_INFO } from "./constants";
 
 export default function Home() {
   const { socket } = useSocket();
   const [nickname, setNickname] = useState('');
+  const [joinCode, setJoinCode] = useState('');
   const [userVerificationStatus, setUserVerificationStatus] = useState<IUserVerificationStatus>({
     nickname: '',
-    inviteCode: '',
     received: false,
   });
+
+  const processUserSession = async (data: IUserVerificationStatus) => {
+    if(!socket) return;
+
+    setUserVerificationStatus({
+      nickname: data.nickname,
+      received: true,
+    })
+  }
 
   const requestRegister = async () => {
     const res = await fetch(`https://${process.env.NEXT_PUBLIC_API_DOMAIN}/register`, {
@@ -28,24 +38,42 @@ export default function Home() {
 
     const data = await res.json();
 
-    setUserVerificationStatus({
-      nickname: data.value.nickname,
-      inviteCode: data.value.inviteCode,
-      received: true,
-    })
+    processUserSession(data.value);
+  }
+
+  const requestJoin = async () => {
+    if(!socket) return;
+
+    socket.emit('join', joinCode);
+  }
+
+  const createRoom = async () => {
+    if(!socket) return;
+
+    const res = await fetch(`https://${process.env.NEXT_PUBLIC_API_DOMAIN}/create-room`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': '4444',
+      },
+      credentials: 'include',
+    });
+
+    const data = await res.json();
+
+    console.log('createRoom', data.value);
+    
+    socket.emit('join', data.value.inviteCode);
   }
 
   useEffect(() => {
     if (!socket) return;
 
-    socket.emit('register');
+    socket.emit(REQUEST_USER_INFO);
 
-    socket.on('register', (data) => {
-      setUserVerificationStatus({
-        nickname: data.value.nickname,
-        inviteCode: data.value.inviteCode,
-        received: true,
-      });
+    socket.on(REQUEST_USER_INFO, (data) => {
+      console.log(REQUEST_USER_INFO, data);
+      processUserSession(data.value);
     });
   }, [socket])
 
@@ -59,7 +87,11 @@ export default function Home() {
             userVerificationStatus.nickname !== '' ? (
               <div>
                 <span>안녕하세요, {userVerificationStatus.nickname}님</span><br />
-                <span>초대 코드: {userVerificationStatus.inviteCode}</span>
+                <input type="text" value={joinCode} onChange={(e) => {setJoinCode(e.target.value)}}/>
+                <button onClick={() => { requestJoin() }}>참가하기</button><br />
+
+                <span>또는</span><br />
+                <button onClick={() => { createRoom() }}>방 만들기</button>
               </div>
             ) : (
               <div>
@@ -72,7 +104,7 @@ export default function Home() {
           )
         }
       </div>
-      {/* <Board /> */}
+      <Board />
       <div>Footer</div>
     </main>
   );
