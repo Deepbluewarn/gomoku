@@ -1,4 +1,8 @@
 .container {
+    --black-stone: #272727;
+    --white-stone: #f0f0f0;
+
+    position: relative;
     display: flex;
     margin: auto;
     width: 100%;
@@ -7,20 +11,45 @@
     aspect-ratio: 1 / 1;
 }
 
-.board {
+.board-inner {
+    width: 100%;
+    padding: 8px;
+    border: 2px solid #272727;
+}
+
+/* line */
+
+.line-container {
+    width: 100%;
+    height: 100%;
+    border: 2px solid #272727;
+}
+
+/* cell */
+
+.cell-container {
     display: grid;
     grid-template-columns: repeat(15, 1fr);
     grid-template-rows: repeat(15, 1fr);
     width: 100%;
     height: 100%;
-    border: 1px solid #272727;
-    background-color: #ddbc00;
+    border: 2px solid #272727;
 }
 
 .cell {
-    border: 1px solid #272727;
+    fill: transparent;
+    stroke: none;
 }
 
 .cell:hover {
-    background-color: #6d5300;
+    stroke: red;
+}
+
+.cell-black-stone {
+    fill: var(--black-stone);
+    stroke: #272727;
+}
+.cell-white-stone {
+    fill: var(--white-stone);
+    stroke: #272727;
 }
