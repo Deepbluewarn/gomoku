@@ -2,11 +2,11 @@
 
 import { useEffect } from "react";
 import { useSocket } from "../socket-provider";
-import { JOIN, ROOM_INFO, USER_NOT_FOUND } from "@/interfaces/socket.io";
+import { JOIN, ROOM_INFO, USER_JOINED, USER_LEAVED, USER_NOT_FOUND } from "@/interfaces/socket.io";
 import { useRouter } from "next/navigation";
 
 export default function RoomInfo(props: {roomId: string}) {
-    const { socket } = useSocket();
+    const { socket, status, roomStatus, roomId } = useSocket();
     const router = useRouter();
 
     useEffect(() => {
@@ -19,13 +19,27 @@ export default function RoomInfo(props: {roomId: string}) {
         });
 
         socket.on(ROOM_INFO, (room) => {
-            console.log(`${ROOM_INFO}: `, room);
+            console.log(`[RoomInfo] ${ROOM_INFO}: `, room);
+        });
+
+        socket.on(USER_JOINED, (user) => {
+            console.log(`[RoomInfo] ${USER_JOINED}: `, user)
+        });
+
+        socket.on(USER_LEAVED, (user) => {
+            console.log(`[RoomInfo] ${USER_LEAVED}: `, user)
         });
     }, [socket]);
 
     return (
-        <div>
-            <h1>Room: {props.roomId}</h1>
-        </div>
+        <>
+            {
+                roomStatus === 'joined' ? (
+                    <h1>Room: {props.roomId}</h1>
+                ) : (
+                    <h1>Not Joined</h1>
+                )
+            }
+        </>
     )
 }

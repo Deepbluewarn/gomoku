@@ -7,15 +7,15 @@ import { Fragment, useCallback, useEffect, useState } from 'react';
 
 type StoneType = 'none' | 'black' | 'white';
 
-export default function Board(props: {room_id: string}) {
-    const { socket } = useSocket();
+export default function Board(props: {roomId: string}) {
+    const { socket, status, roomStatus, roomId } = useSocket();
     const [board, setBoard] = useState<StoneType[][]>(Array(BOARD_SIZE).fill(Array(BOARD_SIZE).fill('none')));
 
     const onCellClick = (cell_num: number) => {
         if (!socket) return;
 
         socket.emit('place', {
-            room_id: props.room_id,
+            room_id: props.roomId,
             cell_num
         });
     }
@@ -87,15 +87,23 @@ export default function Board(props: {room_id: string}) {
     }
 
     return (
-        <div className={styles.container}>
-            <div className={styles['board-inner']}>
-                <div className={styles['line-container']}>
-                    <svg>
-                        {lines}
-                        {stones}
-                    </svg>
-                </div>
-            </div>
-        </div>
+        <>
+            {
+                roomStatus === 'joined' ? (
+                    <div className={styles.container}>
+                        <div className={styles['board-inner']}>
+                            <div className={styles['line-container']}>
+                                <svg>
+                                    {lines}
+                                    {stones}
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                ) : (
+                    <h1>Not Joined</h1>
+                )
+            }
+        </>
     );
 }
