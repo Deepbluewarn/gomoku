@@ -1,11 +1,10 @@
 'use client'
 
-import Board from "@/components/board/Board";
 import styles from './page.module.css';
 import { useSocket } from "@/components/socket-provider";
 import { useEffect, useState } from "react";
 import { IUserVerificationStatus } from "@/interfaces/register";
-import { REQUEST_USER_INFO } from "./constants";
+import { IUserSession, REQUEST_USER_INFO } from "@/interfaces/socket.io";
 
 export default function Home() {
   const { socket } = useSocket();
@@ -16,11 +15,11 @@ export default function Home() {
     received: false,
   });
 
-  const processUserSession = async (data: IUserVerificationStatus) => {
+  const processUserSession = async (nickname: string) => {
     if(!socket) return;
 
     setUserVerificationStatus({
-      nickname: data.nickname,
+      nickname,
       received: true,
     })
   }
@@ -36,15 +35,15 @@ export default function Home() {
       body: JSON.stringify({ nickname }),
     });
 
-    const data = await res.json();
+    const data: IUserSession = await res.json();
 
-    processUserSession(data.value);
+    processUserSession(data.nickname);
   }
 
   const requestJoin = async () => {
     if(!socket) return;
 
-    socket.emit('join', joinCode);
+    window.location.href = `/room/${joinCode}`;
   }
 
   const createRoom = async () => {
@@ -62,8 +61,7 @@ export default function Home() {
     const data = await res.json();
 
     console.log('createRoom', data.value);
-    
-    socket.emit('join', data.value.inviteCode);
+    window.location.href = `/room/${data.value.inviteCode}`;
   }
 
   useEffect(() => {
@@ -73,7 +71,7 @@ export default function Home() {
 
     socket.on(REQUEST_USER_INFO, (data) => {
       console.log(REQUEST_USER_INFO, data);
-      processUserSession(data.value);
+      processUserSession(data.nickname);
     });
   }, [socket])
 
@@ -104,7 +102,6 @@ export default function Home() {
           )
         }
       </div>
-      <Board />
       <div>Footer</div>
     </main>
   );
