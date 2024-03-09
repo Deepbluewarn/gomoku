@@ -4,6 +4,7 @@ import { BOARD_SIZE } from '@/app/constants';
 import styles from './board.module.css';
 import { useSocket } from '../socket-provider';
 import { Fragment, useCallback, useEffect, useState } from 'react';
+import { PLACE, PLACED } from '@/interfaces/socket.io';
 
 type StoneType = 'none' | 'black' | 'white';
 
@@ -14,7 +15,7 @@ export default function Board(props: {roomId: string}) {
     const onCellClick = (cell_num: number) => {
         if (!socket) return;
 
-        socket.emit('place', {
+        socket.emit(PLACE, {
             room_id: props.roomId,
             cell_num
         });
@@ -23,7 +24,7 @@ export default function Board(props: {roomId: string}) {
     useEffect(() => {
         if (!socket) return;
 
-        socket.on('placed', (data) => {
+        socket.on(PLACED, (data) => {
             console.log('placed: ', data);
             place(data.cell_num, 'white');
         });
