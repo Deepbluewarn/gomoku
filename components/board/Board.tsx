@@ -4,13 +4,15 @@ import { BOARD_SIZE } from '@/app/constants';
 import styles from './board.module.css';
 import { useSocket } from '../socket-provider';
 import { Fragment, useCallback, useEffect, useState } from 'react';
-import { PLACE, PLACED } from '@/interfaces/socket.io';
+import { GAME_END, GAME_STARTED, PLACE, PLACED } from '@/interfaces/socket.io';
 
 type StoneType = 'none' | 'black' | 'white';
+type GameState = 'waiting' | 'playing' | 'end';
 
 export default function Board(props: {roomId: string}) {
     const { socket, status, roomStatus, roomId } = useSocket();
     const [board, setBoard] = useState<StoneType[][]>(Array(BOARD_SIZE).fill(Array(BOARD_SIZE).fill('none')));
+    const [gameState, setGameState] = useState<GameState>('waiting');
 
     const onCellClick = (cell_num: number) => {
         if (!socket) return;
@@ -23,6 +25,16 @@ export default function Board(props: {roomId: string}) {
 
     useEffect(() => {
         if (!socket) return;
+
+        socket.on(GAME_STARTED, () => {
+            console.log('game started');
+            setGameState('playing');
+        });
+
+        socket.on(GAME_END, () => {
+            console.log('game end');
+            setGameState('end');
+        });
 
         socket.on(PLACED, (data) => {
             console.log('placed: ', data);
@@ -87,20 +99,36 @@ export default function Board(props: {roomId: string}) {
         }
     }
 
+    const BoardContainer = (
+        <div className={styles.container}>
+            <div className={styles.statusContainer}>
+                {
+                    gameState !== 'playing' ? (
+                        <div className={styles.status}>
+                            {gameState}
+                        </div>
+                    ) : null
+                }
+            </div>
+            <div className={styles.boardContainer}>
+                
+                <div className={styles['board-inner']}>
+                    <div className={styles['line-container']}>
+                        <svg>
+                            {lines}
+                            {stones}
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+
     return (
         <>
             {
                 roomStatus === 'joined' ? (
-                    <div className={styles.container}>
-                        <div className={styles['board-inner']}>
-                            <div className={styles['line-container']}>
-                                <svg>
-                                    {lines}
-                                    {stones}
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
+                    BoardContainer
                 ) : (
                     <h1>Not Joined</h1>
                 )
