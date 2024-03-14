@@ -2,40 +2,35 @@
 
 import { useEffect } from "react";
 import { useSocket } from "../socket-provider";
-import { JOIN, ROOM_INFO, USER_JOINED, USER_LEAVED, USER_NOT_FOUND } from "@/interfaces/socket.io";
+import { JOIN } from "@/interfaces/socket.io";
 import { useRouter } from "next/navigation";
 
-export default function RoomInfo(props: {roomId: string}) {
-    const { socket, status, roomStatus, roomId } = useSocket();
-    const router = useRouter();
+export default function RoomInfo(props: { roomId: string }) {
+    const { socket, roomStatus, gameStatus, userList, turn } = useSocket();
 
     useEffect(() => {
-        if(!socket) return;
+        if (!socket) return;
 
         socket.emit(JOIN, props.roomId);
-
-        socket.on(USER_NOT_FOUND, () => {
-            router.push('/');
-        });
-
-        socket.on(ROOM_INFO, (room) => {
-            console.log(`[RoomInfo] ${ROOM_INFO}: `, room);
-        });
-
-        socket.on(USER_JOINED, (user) => {
-            console.log(`[RoomInfo] ${USER_JOINED}: `, user)
-        });
-
-        socket.on(USER_LEAVED, (user) => {
-            console.log(`[RoomInfo] ${USER_LEAVED}: `, user)
-        });
     }, [socket]);
 
     return (
         <>
             {
                 roomStatus === 'joined' ? (
-                    <h1>Room: {props.roomId}</h1>
+                    <>
+                        <h1>Room: {props.roomId}</h1>
+                        {
+                            Array.from(userList).map(user => {
+                                return (
+                                    <h2 key={user[0]}>{user[1]}</h2>
+                                )
+                            })
+                        }
+                        <h2>Turn: {turn ? 'True' : 'False'}</h2>
+                        <h2>GameStatus: {gameStatus}</h2>
+                    </>
+
                 ) : (
                     <h1>Not Joined</h1>
                 )

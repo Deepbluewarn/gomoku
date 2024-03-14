@@ -2,45 +2,44 @@
 
 import { BOARD_SIZE } from '@/app/constants';
 import styles from './board.module.css';
-import { useSocket } from '../socket-provider';
+import { UserList, useSocket } from '../socket-provider';
 import { Fragment, useCallback, useEffect, useState } from 'react';
-import { GAME_END, GAME_STARTED, PLACE, PLACED } from '@/interfaces/socket.io';
+import { PLACE, PLACED } from '@/interfaces/socket.io';
+import { IRoom } from '@/interfaces/room';
 
 type StoneType = 'none' | 'black' | 'white';
-type GameState = 'waiting' | 'playing' | 'end';
+
+const canStartGame = (roomInfo: IRoom | null, userList: UserList) => {
+    return roomInfo?.black && userList.size === 2;
+}
 
 export default function Board(props: {roomId: string}) {
-    const { socket, status, roomStatus, roomId } = useSocket();
+    const { socket, roomStatus, gameStatus, userList, roomInfo, turn } = useSocket();
     const [board, setBoard] = useState<StoneType[][]>(Array(BOARD_SIZE).fill(Array(BOARD_SIZE).fill('none')));
-    const [gameState, setGameState] = useState<GameState>('waiting');
 
-    const onCellClick = (cell_num: number) => {
+    const onCellClick = useCallback((cell_num: number) => {
         if (!socket) return;
+
+        if(gameStatus === 'waiting' && !canStartGame(roomInfo, userList)) return;
+        if(gameStatus === 'playing' && !turn) return;
+        if(gameStatus === 'end') return;
 
         socket.emit(PLACE, {
             room_id: props.roomId,
             cell_num
         });
-    }
+    }, [socket, roomInfo, userList, gameStatus, turn, props.roomId]);
 
     useEffect(() => {
         if (!socket) return;
 
-        socket.on(GAME_STARTED, () => {
-            console.log('game started');
-            setGameState('playing');
-        });
-
-        socket.on(GAME_END, () => {
-            console.log('game end');
-            setGameState('end');
-        });
-
         socket.on(PLACED, (data) => {
+            if(!roomInfo) return;
+
             console.log('placed: ', data);
-            place(data.cell_num, 'white');
+            place(data.cell_num, data.color);
         });
-    }, [socket]);
+    }, [socket, roomInfo]);
 
     const place = useCallback((cell_num: number, stoneType: StoneType) => {
         let i = Math.trunc(cell_num / BOARD_SIZE);
@@ -103,9 +102,9 @@ export default function Board(props: {roomId: string}) {
         <div className={styles.container}>
             <div className={styles.statusContainer}>
                 {
-                    gameState !== 'playing' ? (
+                    gameStatus !== 'playing' ? (
                         <div className={styles.status}>
-                            {gameState}
+                            {gameStatus}
                         </div>
                     ) : null
                 }
