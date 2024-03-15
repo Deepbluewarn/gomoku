@@ -100,7 +100,7 @@ export default function SocketProvider({ children }: { children: React.ReactNode
                 status: room.status
             });
             setGameStatus(room.status);
-            setTurn(room.black || false);
+            setTurn(room.turn);
         });
 
         socket.on(GAME_STARTED, () => {
