@@ -9,8 +9,12 @@ import { Socket, io } from "socket.io-client";
 
 export type IO = Server<ServerToClientEvents, ClientToServerEvents>;
 export type SOCKET = Socket<ServerToClientEvents, ClientToServerEvents>;
-export type UserList = Map<string, string>;
+export type UserList = Map<string, User>;
 
+interface User {
+    status: 'online' | 'offline';
+    nickname: string;
+}
 type SocketContextType = {
     socket: SOCKET | null;
     socketStatus: SocketStatus;
@@ -90,7 +94,10 @@ export default function SocketProvider({ children }: { children: React.ReactNode
         socket.on(GAME_INFO, (room) => {
             console.log(`[GAME_INFO] ${GAME_INFO}: `, room);
 
-            setUserList(new Map(room.players?.map(user => [user.id, user.nickname])));
+            setUserList(new Map(room.players?.map(user => [user.id, {
+                status: 'online',
+                nickname: user.nickname
+            }])));
             setRoomInfo({
                 room_id: room.room_id,
                 players: room.players,
@@ -118,7 +125,10 @@ export default function SocketProvider({ children }: { children: React.ReactNode
 
             setUserList((prev) => {
                 const newMap = new Map(prev);
-                newMap.set(user.id, user.nickname);
+                newMap.set(user.id, {
+                    status: 'online',
+                    nickname: user.nickname
+                });
                 return newMap;
             });
         });
@@ -128,7 +138,10 @@ export default function SocketProvider({ children }: { children: React.ReactNode
 
             setUserList((prev) => {
                 const newMap = new Map(prev);
-                newMap.delete(user.id);
+                newMap.set(user.id, {
+                    status: 'offline',
+                    nickname: user.nickname
+                });
                 return newMap;
             });
         });

@@ -23,7 +23,7 @@ export default function RoomInfo(props: { roomId: string }) {
                         {
                             Array.from(userList).map(user => {
                                 return (
-                                    <h2 key={user[0]}>{user[1]}</h2>
+                                    <h2 key={user[0]}>{user[1].nickname} ({user[1].status})</h2>
                                 )
                             })
                         }
