@@ -4,10 +4,8 @@ import { BOARD_SIZE } from '@/app/constants';
 import styles from './board.module.css';
 import { UserList, useSocket } from '../socket-provider';
 import { Fragment, useCallback, useEffect, useState } from 'react';
-import { PLACE, PLACED } from '@/interfaces/socket.io';
+import { PLACE, PLACED, Stone } from '@/interfaces/socket.io';
 import { IRoom } from '@/interfaces/room';
-
-type StoneType = 'none' | 'black' | 'white';
 
 const canStartGame = (roomInfo: IRoom | null, userList: UserList) => {
     return roomInfo?.black && userList.size === 2;
@@ -15,7 +13,7 @@ const canStartGame = (roomInfo: IRoom | null, userList: UserList) => {
 
 export default function Board(props: {roomId: string}) {
     const { socket, roomStatus, gameStatus, userList, roomInfo, turn } = useSocket();
-    const [board, setBoard] = useState<StoneType[][]>(Array(BOARD_SIZE).fill(Array(BOARD_SIZE).fill('none')));
+    const [board, setBoard] = useState<Stone[][]>(Array(BOARD_SIZE).fill(Array(BOARD_SIZE).fill('none')));
 
     const onCellClick = useCallback((cell_num: number) => {
         if (!socket) return;
@@ -41,7 +39,17 @@ export default function Board(props: {roomId: string}) {
         });
     }, [socket, roomInfo]);
 
-    const place = useCallback((cell_num: number, stoneType: StoneType) => {
+    useEffect(() => {
+        if(!roomInfo) return;
+
+        const board = roomInfo.board;
+
+        board.forEach(stone => {
+            place(stone.cellNum, stone.color);
+        })
+    }, [roomInfo])
+
+    const place = useCallback((cell_num: number, stone: Stone) => {
         let i = Math.trunc(cell_num / BOARD_SIZE);
         let j = cell_num % BOARD_SIZE - 1;
 
@@ -53,7 +61,7 @@ export default function Board(props: {roomId: string}) {
         setBoard((prev) => {
             const newBoard = prev.map(arr => [...arr]);
             
-            newBoard[i][j] = stoneType;
+            newBoard[i][j] = stone;
             return newBoard;
         });
     }, []);
